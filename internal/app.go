@@ -34,6 +34,7 @@ func (a *App) Handler() http.HandlerFunc {
 	router := mux.NewRouter()
 
 	router.Handle("/welcome", a.Welcome)
+	// router.Handle("/register", )
 	h := http.HandlerFunc(router.ServeHTTP)
 	return h
 }
