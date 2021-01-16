@@ -14,10 +14,9 @@ type LoginFunc func(email, password string) (Token, error)
 
 // Register adds a new user to cognito user pools
 func Register(c Config) RegisterFunc {
-
 	return func(email, password string) error {
 		sess, err := session.NewSession(&aws.Config{
-			Region: aws.String("region"),
+			Region: aws.String(c.Region),
 		})
 		if err != nil {
 			log.Println(err)
@@ -27,7 +26,7 @@ func Register(c Config) RegisterFunc {
 		cognitoClient := cognitoidentityprovider.New(sess)
 		newUserData := &cognitoidentityprovider.AdminCreateUserInput{
 			DesiredDeliveryMediums: []*string{
-				aws.String(email),
+				aws.String("EMAIL"),
 			},
 			UserAttributes: []*cognitoidentityprovider.AttributeType{
 				{
@@ -50,7 +49,7 @@ func Login(c Config) LoginFunc {
 
 	return func(email, password string) (Token, error) {
 		sess, err := session.NewSession(&aws.Config{
-			Region: aws.String("region"),
+			Region: aws.String(c.Region),
 		})
 		if err != nil {
 			log.Println(err)
@@ -68,7 +67,12 @@ func Login(c Config) LoginFunc {
 		cognitoClient := cognitoidentityprovider.New(sess)
 		resp, err := cognitoClient.InitiateAuth(params)
 
-		if resp.ChallengeName == aws.String("NEW_PASSWORD_REQUIRED") {
+		if err != nil {
+			log.Println("Error in initiating auth : ", err)
+			return Token{}, err
+		}
+
+		if resp.ChallengeName == aws.String("NEW_PASSWORD_REQUIRED") || resp.ChallengeName != nil {
 
 			newParams := &cognitoidentityprovider.AdminRespondToAuthChallengeInput{
 				ChallengeName: aws.String("NEW_PASSWORD_REQUIRED"),
@@ -86,10 +90,8 @@ func Login(c Config) LoginFunc {
 				log.Println(err)
 				return Token{}, err
 			}
-			return ToTokenResult(challengeResp.AuthenticationResult), nil
-
+			return ToTokenResult(challengeResp.AuthenticationResult)
 		}
-
-		return ToTokenResult(resp.AuthenticationResult), nil
+		return ToTokenResult(resp.AuthenticationResult)
 	}
 }
