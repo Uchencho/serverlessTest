@@ -13,7 +13,7 @@ main: main.go
 	go build -o $(OUTPUT) main.go
 
 build-local:
-	go build -o $(OUTPUT) main.go
+	go build -o $(OUTPUT) local/main.go
 
 # compile the code to run in Lambda (local or real)
 .PHONY: lambda
